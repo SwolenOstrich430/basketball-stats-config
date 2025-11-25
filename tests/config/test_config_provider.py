@@ -5,7 +5,6 @@ from config.config_provider import ConfigProvider
 class TestConfigProvider():
      
     def setup_method(self):
-        self.subject = ConfigProvider()
         self.config = {}
         
         self.valid_key_simple = "valid_key_simple"
@@ -17,6 +16,7 @@ class TestConfigProvider():
         self.config[self.valid_key_multi_1][self.valid_key_multi_2] = 2
 
         self.invalid_key = "asdf"
+        self.subject = ConfigProvider(self.config)
 
     def test_get_searches_for_all_provided_keys_in_current_app_config(self, mocker):
         mocker.patch.object(
