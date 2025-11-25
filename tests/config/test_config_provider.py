@@ -1,6 +1,6 @@
 import pytest
 
-from app.service.config.config_provider import ConfigProvider
+from config.config_provider import ConfigProvider
 
 class TestConfigProvider():
      

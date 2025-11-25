@@ -1,10 +1,9 @@
 from functools import reduce
-from flask import current_app
-
-from app.service.config.iconfig_provider import IConfigProvider
+from config.iconfig_provider import IConfigProvider
 
 class ConfigProvider(IConfigProvider):
-    def __init__(self):
+    def __init__(self, config: dict):
+        self._set_config(config)
         pass 
 
     def get(self, *keys: str) -> str:
@@ -17,6 +16,8 @@ class ConfigProvider(IConfigProvider):
         
         return config_val
 
-    
+    def _set_config(self, config: dict):
+        self.config = config
+
     def _get_config(self) -> dict:
         return current_app.config
