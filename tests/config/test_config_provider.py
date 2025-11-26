@@ -37,13 +37,13 @@ class TestConfigProvider():
         other_package_name = "other_package"
         parent_dir = os.path.dirname(os.path.dirname(__file__))
         package_dir = os.path.join(parent_dir, other_package_name)
-        os.makedirs(package_dir, exist_ok=True)
-        file_name = os.path.join(package_dir, 'file.txt')
-        
-        f = open(os.path.join(package_dir, '__init__.py'), 'w')
-        f.close()
 
         try:
+            os.makedirs(package_dir, exist_ok=True)
+            file_name = os.path.join(package_dir, 'file.txt')    
+            f = open(os.path.join(package_dir, '__init__.py'), 'w')
+            f.close()
+
             with open(file_name, 'w') as file:
                 file.write(json.dumps(mock_config))
 
