@@ -11,7 +11,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/SwolenOstrich430/basketball_reference_client",
     packages=setuptools.find_packages(),
-    package_data={'bball_reference_client': ['*.txt']},
+    package_data={'basketball_stats_config': ['*.txt']},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
