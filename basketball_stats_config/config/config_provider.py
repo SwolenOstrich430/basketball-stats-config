@@ -1,7 +1,7 @@
 from importlib import resources
 from functools import reduce
 import json 
-from config.iconfig_provider import IConfigProvider
+from basketball_stats_config.config.iconfig_provider import IConfigProvider
 
 class ConfigProvider(IConfigProvider):
     def __init__(

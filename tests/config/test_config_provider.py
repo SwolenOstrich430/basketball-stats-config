@@ -3,7 +3,7 @@ import os
 import shutil
 import sys 
 import json
-from config.config_provider import ConfigProvider
+from basketball_stats_config.config.config_provider import ConfigProvider
 
 class TestConfigProvider():
      
