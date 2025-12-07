@@ -2,13 +2,16 @@ from importlib import resources
 from functools import reduce
 import json 
 from basketball_stats_config.config.iconfig_provider import IConfigProvider
+from basketball_stats_config.secret.isecret_provider import ISecretProvider
 
+SECRET_PREFIX = "secret://"
 class ConfigProvider(IConfigProvider):
     def __init__(
         self, 
         config: dict = None, 
         package: __module__ = None, 
-        config_file: str = None
+        config_file: str = None, 
+        secret_provider: ISecretProvider = None
     ):
         self.config = None 
 
@@ -29,7 +32,16 @@ class ConfigProvider(IConfigProvider):
                 f"Config value not found for keys: {keys}"
             )
         
+        if self.is_secret(config_val):
+            config_val = self.get_secret(config_val)
+            
+        
         return config_val
+    
+    def is_secret(self, value: str) -> bool:
+        return isinstance(value, str) and value.startswith(
+            SECRET_PREFIX
+        )
 
     def _set_config(self, config: dict):
         self.config = config

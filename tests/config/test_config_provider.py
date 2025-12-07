@@ -66,3 +66,17 @@ class TestConfigProvider():
         with pytest.raises(KeyError) as _:
             self.subject.get(self.invalid_key)
 
+    def test_is_secret_returns_true_if_value_is_secret_format(self):
+        secret_val = "secret://my_secret"
+        assert self.subject.is_secret(secret_val) is True
+
+    def test_is_secret_returns_false_if_value_is_not_in_secret_format(self):
+        secret_val = "secrets://my_secret"
+        assert self.subject.is_secret(secret_val) is False
+
+    def test_is_secret_returns_false_if_value_is_null(self):
+        secret_val = None
+        assert self.subject.is_secret(secret_val) is False
+
+
+
