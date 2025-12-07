@@ -5,6 +5,7 @@ from basketball_stats_config.config.iconfig_provider import IConfigProvider
 from basketball_stats_config.secret.isecret_provider import ISecretProvider
 
 SECRET_PREFIX = "secret://"
+
 class ConfigProvider(IConfigProvider):
     def __init__(
         self, 
@@ -13,6 +14,8 @@ class ConfigProvider(IConfigProvider):
         config_file: str = None, 
         secret_provider: ISecretProvider = None
     ):
+        assert isinstance(secret_provider, ISecretProvider)
+        self.secret_provider = secret_provider
         self.config = None 
 
         if isinstance(config, dict) and config:
@@ -32,19 +35,27 @@ class ConfigProvider(IConfigProvider):
                 f"Config value not found for keys: {keys}"
             )
         
-        if self.is_secret(config_val):
-            config_val = self.get_secret(config_val)
-            
-        
         return config_val
     
+    def decorate_secrets(self, config_val: str|list|dict) -> str|list|dict:
+        if isinstance(config_val, str) and self.is_secret(config_val):
+            return self.secret_provider.get_secret(config_val)
+        elif isinstance(config_val, list):
+            return map(self.decorate_secrets, config_val)
+        elif isinstance(config_val, dict):
+            for key, val in dict.items():
+                config_val[key] = self.decorate_secrets(val)
+
+        return config_val
+
+
     def is_secret(self, value: str) -> bool:
         return isinstance(value, str) and value.startswith(
             SECRET_PREFIX
         )
 
     def _set_config(self, config: dict):
-        self.config = config
+        self.config = self.decorate_secrets(config)
 
     def _get_config(self) -> dict:
         return self.config
