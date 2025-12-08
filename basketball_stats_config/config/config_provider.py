@@ -3,7 +3,7 @@ from functools import reduce
 import json 
 from basketball_stats_config.config.iconfig_provider import IConfigProvider
 from basketball_stats_config.secret.isecret_provider import ISecretProvider
-
+from basketball_stats_config.secret.google_secret_provider import GoogleSecretProvider
 SECRET_PREFIX = "secret://"
 
 class ConfigProvider(IConfigProvider):
@@ -14,8 +14,7 @@ class ConfigProvider(IConfigProvider):
         config_file: str = None, 
         secret_provider: ISecretProvider = None
     ):
-        assert isinstance(secret_provider, ISecretProvider)
-        self.secret_provider = secret_provider
+        self._set_secret_provider(secret_provider)
         self.config = None 
 
         if isinstance(config, dict) and config:
@@ -41,9 +40,9 @@ class ConfigProvider(IConfigProvider):
         if isinstance(config_val, str) and self.is_secret(config_val):
             return self.secret_provider.get_secret(config_val)
         elif isinstance(config_val, list):
-            return map(self.decorate_secrets, config_val)
+            return list(map(self.decorate_secrets, config_val))
         elif isinstance(config_val, dict):
-            for key, val in dict.items():
+            for key, val in config_val.items():
                 config_val[key] = self.decorate_secrets(val)
 
         return config_val
@@ -59,3 +58,10 @@ class ConfigProvider(IConfigProvider):
 
     def _get_config(self) -> dict:
         return self.config
+    
+    def _set_secret_provider(self, secret_provider: ISecretProvider) -> ISecretProvider:
+        if secret_provider is None:
+            secret_provider = GoogleSecretProvider()
+
+        assert isinstance(secret_provider, ISecretProvider)
+        self.secret_provider = secret_provider

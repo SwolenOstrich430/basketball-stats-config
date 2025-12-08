@@ -3,31 +3,81 @@ import os
 import shutil
 import sys 
 import json
+from basketball_stats_config.config.config_provider import SECRET_PREFIX
 from basketball_stats_config.config.config_provider import ConfigProvider
-
+from basketball_stats_config.secret.google_secret_provider import GoogleSecretProvider
 class TestConfigProvider():
      
     def setup_method(self):
-        self.config = {}
+        self.config = {
+            "secret": f"{SECRET_PREFIX}secret",
+            "secret_list": [f"{SECRET_PREFIX}secret", f"{SECRET_PREFIX}secret", "1"],
+            "secret_dict": {
+                "secret": f"{SECRET_PREFIX}secret",
+                "secret_list": [f"{SECRET_PREFIX}secret", f"{SECRET_PREFIX}secret", "1"],
+                "secret_dict": {
+                    "secret": f"{SECRET_PREFIX}secret",
+                    "secret_list": [f"{SECRET_PREFIX}secret", f"{SECRET_PREFIX}secret", "1"]
+                }
+            }
+        }
+
+        self.secret_word = "secrret"
+        self.expected_config = {
+            "secret": self.secret_word,
+            "secret_list": [self.secret_word, self.secret_word, "1"],
+            "secret_dict": {
+                "secret": self.secret_word,
+                "secret_list": [self.secret_word, self.secret_word, "1"],
+                "secret_dict": {
+                    "secret": self.secret_word,
+                    "secret_list": [self.secret_word, self.secret_word, "1"]
+                }
+            }
+        }
         
         self.valid_key_simple = "valid_key_simple"
         self.config[self.valid_key_simple] = 1
+        self.expected_config[self.valid_key_simple] = 1
 
         self.valid_key_multi_1 = "valid_key_multi"
         self.valid_key_multi_2 = "valid_key_multi_1"
         self.config[self.valid_key_multi_1] = {}
         self.config[self.valid_key_multi_1][self.valid_key_multi_2] = 2
+        self.expected_config[self.valid_key_multi_1] = {}
+        self.expected_config[self.valid_key_multi_1][self.valid_key_multi_2] = 2
 
         self.invalid_key = "asdf"
-        self.subject = ConfigProvider(self.config)
+
+    @pytest.fixture
+    def secret_provider(self, mocker):
+        secret_provider = mocker.Mock(spec=GoogleSecretProvider)
+
+        mocker.patch.object(
+            secret_provider,
+            'get_secret',
+            return_value=self.secret_word
+        )
+
+        yield secret_provider
+
+    @pytest.fixture 
+    def subject(self, mocker, secret_provider):
+        assert self.config is not None 
+        
+        subject = ConfigProvider(
+            self.config, secret_provider=secret_provider
+        )
+
+        yield subject
 
     def test_init_raises_value_error_if_no_valid_config_provided(self, mocker):
         with pytest.raises(ValueError) as _:
             ConfigProvider()
 
-    def test_init_sets_config_if_valid_config_provided(self, mocker):
-        subject = ConfigProvider(self.config)
-        assert subject._get_config() == self.config
+    def test_init_sets_config_if_valid_config_provided(self, mocker, secret_provider):
+        subject = ConfigProvider(self.config, secret_provider=secret_provider)
+        assert subject._get_config() == self.expected_config
 
     def test_init_sets_config_from_file_if_valid_config_file_provided(self, mocker):
         mock_config = {
@@ -53,30 +103,33 @@ class TestConfigProvider():
         finally:
             shutil.rmtree(package_dir)
 
-    def test_get_searches_for_all_provided_keys_in_current_app_config(self, mocker):
-        res = self.subject.get(self.valid_key_simple)
+    def test_init_decorates_config_with_secrets(self, mocker, subject):
+        assert subject._get_config() == self.expected_config
+
+    def test_get_searches_for_all_provided_keys_in_current_app_config(self, mocker, subject):
+        res = subject.get(self.valid_key_simple)
         assert res == self.config[self.valid_key_simple]
 
-        res = self.subject.get(
+        res = subject.get(
             self.valid_key_multi_1, self.valid_key_multi_2
         )
         assert res == self.config[self.valid_key_multi_1][self.valid_key_multi_2]
 
-    def test_get_throws_key_error_if_provided_key_does_not_exist(self, mocker):
+    def test_get_throws_key_error_if_provided_key_does_not_exist(self, mocker, subject):
         with pytest.raises(KeyError) as _:
-            self.subject.get(self.invalid_key)
+            subject.get(self.invalid_key)
 
-    def test_is_secret_returns_true_if_value_is_secret_format(self):
+    def test_is_secret_returns_true_if_value_is_secret_format(self, subject):
         secret_val = "secret://my_secret"
-        assert self.subject.is_secret(secret_val) is True
+        assert subject.is_secret(secret_val) is True
 
-    def test_is_secret_returns_false_if_value_is_not_in_secret_format(self):
+    def test_is_secret_returns_false_if_value_is_not_in_secret_format(self, subject):
         secret_val = "secrets://my_secret"
-        assert self.subject.is_secret(secret_val) is False
+        assert subject.is_secret(secret_val) is False
 
-    def test_is_secret_returns_false_if_value_is_null(self):
+    def test_is_secret_returns_false_if_value_is_null(self, subject):
         secret_val = None
-        assert self.subject.is_secret(secret_val) is False
+        assert subject.is_secret(secret_val) is False
 
 
 
